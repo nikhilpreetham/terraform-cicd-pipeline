@@ -12,7 +12,7 @@ terraform {
 
 # AWS provider
 provider "aws" {
-  region = "ap-south-1"
+  region = var.aws_region
 }
 
 # Get current AWS account ID
@@ -20,7 +20,7 @@ data "aws_caller_identity" "current" {}
 
 # Development bucket name
 locals {
-  bucket_name = "terraform-cicd-app-${data.aws_caller_identity.current.account_id}-ap-south-1"
+  bucket_name = "terraform-cicd-app-${data.aws_caller_identity.current.account_id}-${var.aws_region}"
 }
 
 # 1. Create S3 bucket
