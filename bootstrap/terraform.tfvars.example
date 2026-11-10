@@ -1,0 +1,27 @@
+# Example values for the bootstrap configuration.
+#
+# Usage:
+#   1. Copy this file to terraform.tfvars
+#        PowerShell:   Copy-Item terraform.tfvars.example terraform.tfvars
+#        Linux/macOS:  cp terraform.tfvars.example terraform.tfvars
+#   2. Replace every placeholder with your own values.
+#   3. Never commit terraform.tfvars (it is excluded by .gitignore).
+
+aws_region = "ap-south-1"
+
+# Globally unique S3 bucket name for Terraform remote state.
+# environments/dev/backend.tf must use the same bucket name.
+state_bucket_name = "terraform-cicd-state-<aws-account-id>-ap-south-1"
+
+# GitHub repository in owner/repository format.
+github_repository = "<github-owner>/terraform-cicd-pipeline"
+
+# GitHub environment allowed to assume the deployment role.
+# Must match "environment:" in .github/workflows/terraform-cd.yml.
+github_environment = "dev"
+
+# Immutable numeric IDs used in the OIDC subject claim.
+#   github_owner_id:      gh api users/<github-owner> --jq .id
+#   github_repository_id: gh api repos/<github-owner>/terraform-cicd-pipeline --jq .id
+github_owner_id      = "<github-owner-id>"
+github_repository_id = "<github-repository-id>"

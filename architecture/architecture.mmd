@@ -1,0 +1,27 @@
+flowchart LR
+    DEV(["Developer"])
+    ADMIN(["Admin, local terminal"])
+
+    subgraph GH["GitHub"]
+        REPO["Repository<br/>terraform-cicd-pipeline"]
+        CI["Terraform CI<br/>fmt, TFLint, validate"]
+        CD["Terraform CD<br/>environment: dev<br/>plan + apply"]
+    end
+
+    subgraph AWS["AWS ap-south-1"]
+        OIDC["IAM OIDC provider<br/>token.actions.githubusercontent.com"]
+        ROLE["IAM role<br/>github-actions-terraform-deploy"]
+        STATE[("S3 state bucket<br/>dev/terraform.tfstate<br/>+ .tflock")]
+        APP[("S3 dev bucket<br/>terraform-cicd-app-*")]
+    end
+
+    DEV -->|pull request / push| REPO
+    REPO -->|PR or push to main| CI
+    REPO -->|push to main| CD
+    CD -->|OIDC token| OIDC
+    OIDC -->|AssumeRoleWithWebIdentity| ROLE
+    ROLE -->|read / write state + lock| STATE
+    ROLE -->|create / update| APP
+    ADMIN -.->|terraform apply bootstrap<br/>local state| OIDC
+    ADMIN -.-> ROLE
+    ADMIN -.-> STATE
