@@ -40,3 +40,7 @@ credentials
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Terraform plan files
+*.tfplan
+*.plan
