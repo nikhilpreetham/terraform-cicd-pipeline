@@ -1,0 +1,61 @@
+
+name: Terraform CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'bootstrap/**'
+      - 'environments/dev/**'
+      - '.github/workflows/terraform-cd.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-dev-deployment
+  cancel-in-progress: false
+
+jobs:
+  terraform-deploy:
+    name: Deploy Dev Infrastructure
+    runs-on: ubuntu-latest
+
+    environment: dev
+
+    env:
+      AWS_REGION: ap-south-1
+      TF_IN_AUTOMATION: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.8
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::035237531272:role/github-actions-terraform-deploy
+          aws-region: ap-south-1
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Terraform Initialize
+        working-directory: environments/dev
+        run: terraform init -input=false
+
+      - name: Terraform Plan
+        working-directory: environments/dev
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: environments/dev
+        run: terraform apply -input=false -auto-approve tfplan
