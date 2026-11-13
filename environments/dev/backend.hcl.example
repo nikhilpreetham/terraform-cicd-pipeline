@@ -1,0 +1,6 @@
+# Partial backend configuration for local use.
+#   1. Copy this file to backend.hcl (backend.hcl is excluded by .gitignore).
+#   2. Set bucket to the terraform_state_bucket output from bootstrap.
+#   3. Run: terraform init -backend-config=backend.hcl
+
+bucket = "terraform-cicd-state-<aws-account-id>-ap-south-1"

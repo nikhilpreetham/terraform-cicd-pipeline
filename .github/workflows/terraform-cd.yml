@@ -39,18 +39,31 @@ jobs:
         with:
           terraform_version: 1.15.8
 
+      - name: Check required repository variables
+        env:
+          AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+        run: |
+          if [ -z "$AWS_ROLE_ARN" ] || [ -z "$TF_STATE_BUCKET" ]; then
+            echo "::error::Set the AWS_ROLE_ARN and TF_STATE_BUCKET repository variables (Settings > Secrets and variables > Actions > Variables)."
+            exit 1
+          fi
+
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::035237531272:role/github-actions-terraform-deploy
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ap-south-1
+          mask-aws-account-id: true
 
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
       - name: Terraform Initialize
         working-directory: environments/dev
-        run: terraform init -input=false
+        env:
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+        run: terraform init -input=false -backend-config="bucket=$TF_STATE_BUCKET"
 
       - name: Terraform Plan
         working-directory: environments/dev

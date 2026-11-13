@@ -44,3 +44,5 @@ Thumbs.db
 # Terraform plan files
 *.tfplan
 *.plan
+# Local partial backend configuration
+backend.hcl
