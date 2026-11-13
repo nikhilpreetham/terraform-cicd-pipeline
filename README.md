@@ -32,6 +32,13 @@ A hands-on DevOps project that validates and deploys Terraform code automaticall
 17. [Future Improvements](#17-future-improvements)
 18. [License](#18-license)
 
+Additional documentation:
+
+- [docs/implementation.md](docs/implementation.md): build timeline, resource inventory, how names line up, CD steps
+- [docs/troubleshooting.md](docs/troubleshooting.md): issues encountered during the build and common problems
+- [docs/cost-and-security.md](docs/cost-and-security.md): cost drivers, security controls, public repository considerations
+- [screenshots/README.md](screenshots/README.md): list of evidence screenshots to add
+
 ---
 
 ## 1. Project Objectives
@@ -107,6 +114,12 @@ terraform-cicd-pipeline/
 │       └── terraform-cd.yml          # OIDC login, plan and apply on pushes to main
 ├── architecture/
 │   └── architecture.mmd              # Editable Mermaid diagram
+├── docs/
+│   ├── implementation.md             # Build timeline, resources, CD steps
+│   ├── troubleshooting.md            # Issues encountered and common problems
+│   └── cost-and-security.md          # Cost and security review
+├── screenshots/
+│   └── README.md                     # Evidence screenshots to add
 ├── bootstrap/
 │   ├── main.tf                       # State bucket, OIDC provider, IAM role and policy
 │   ├── variables.tf
@@ -316,6 +329,8 @@ Open a pull request to `main`, wait for **Terraform CI** to pass, then merge. **
 - **Protected state.** The state bucket is versioned, encrypted and blocks all public access.
 - **Nothing sensitive committed.** State, tfvars, plan files and the `.terraform/` directories are excluded by `.gitignore`.
 
+Full review, including public repository considerations: [docs/cost-and-security.md](docs/cost-and-security.md).
+
 ## 14. Cost Considerations
 
 This project uses only S3, IAM and GitHub Actions:
@@ -325,6 +340,8 @@ This project uses only S3, IAM and GitHub Actions:
 - GitHub Actions minutes are free for public repositories, and private repositories include a monthly allowance.
 
 Check the [AWS Pricing Calculator](https://calculator.aws/) for current S3 prices in `ap-south-1`.
+
+Issues met while building the pipeline, and their fixes, are in [docs/troubleshooting.md](docs/troubleshooting.md).
 
 ## 15. Cleanup
 
