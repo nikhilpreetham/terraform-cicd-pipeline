@@ -7,6 +7,7 @@ A hands-on DevOps project that validates and deploys Terraform code automaticall
 ![Terraform](https://img.shields.io/badge/Terraform-IaC-7B42BC?logo=terraform&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI%2FCD-2088FF?logo=githubactions&logoColor=white)
 ![AWS](https://img.shields.io/badge/AWS-ap--south--1-FF9900?logo=amazonwebservices&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 
 ---
 
@@ -29,6 +30,7 @@ A hands-on DevOps project that validates and deploys Terraform code automaticall
 15. [Cleanup](#15-cleanup)
 16. [Known Limitations](#16-known-limitations)
 17. [Future Improvements](#17-future-improvements)
+18. [License](#18-license)
 
 ---
 
@@ -98,6 +100,7 @@ The pipeline flow:
 terraform-cicd-pipeline/
 ├── README.md
 ├── .gitignore
+├── LICENSE                           # MIT License
 ├── .github/
 │   └── workflows/
 │       ├── terraform-ci.yml          # fmt, TFLint, validate on PRs and pushes to main
@@ -112,14 +115,15 @@ terraform-cicd-pipeline/
 │   └── .terraform.lock.hcl
 └── environments/
     └── dev/
-        ├── backend.tf                # S3 backend with native locking
+        ├── backend.tf                # S3 backend with native locking (bucket passed at init)
+        ├── backend.hcl.example       # Local partial backend config; copy to backend.hcl
         ├── main.tf                   # Development S3 bucket
         ├── variables.tf
         ├── outputs.tf
         └── .terraform.lock.hcl
 ```
 
-Not committed (excluded by `.gitignore`): `terraform.tfvars`, `*.tfstate*`, `*.tfplan`, `.terraform/` directories, credentials and key files.
+Not committed (excluded by `.gitignore`): `terraform.tfvars`, `backend.hcl`, `*.tfstate*`, `*.tfplan`, `.terraform/` directories, credentials and key files.
 
 ## 5. Bootstrap Configuration
 
@@ -184,9 +188,10 @@ Steps: `terraform fmt -check -recursive`, `tflint --recursive`, then `init -back
 | Permissions | `contents: read`, `id-token: write` (required to request the OIDC token) |
 | GitHub environment | `dev` |
 | Concurrency | Group `terraform-dev-deployment`, no cancellation, so only one deployment runs at a time |
-| AWS login | `aws-actions/configure-aws-credentials@v4` with `role-to-assume` |
+| AWS login | `aws-actions/configure-aws-credentials@v4`, role from the `AWS_ROLE_ARN` repository variable, `mask-aws-account-id: true` |
+| State bucket | From the `TF_STATE_BUCKET` repository variable, passed with `-backend-config` |
 
-Steps: `aws sts get-caller-identity`, `terraform init`, `terraform plan -out=tfplan`, `terraform apply tfplan`.
+Steps: check that both repository variables are set, `aws sts get-caller-identity`, `terraform init -backend-config="bucket=..."`, `terraform plan -out=tfplan`, `terraform apply tfplan`.
 
 ## 8. OIDC Trust and IAM Permissions
 
@@ -222,6 +227,7 @@ The role has no IAM, EC2 or other service permissions.
 
 | Setting | Value |
 |---|---|
+| `bucket` | Not in the file; passed at `terraform init` with `-backend-config` |
 | `key` | `dev/terraform.tfstate` |
 | `region` | `ap-south-1` |
 | `encrypt` | `true` |
@@ -262,8 +268,18 @@ gh api repos/<github-owner>/terraform-cicd-pipeline --jq .id
 
 ### Step 2: Point the pipeline at your AWS resources
 
-- In `environments/dev/backend.tf`, set `bucket` to the `terraform_state_bucket` output.
-- In `.github/workflows/terraform-cd.yml`, set `role-to-assume` to the `github_actions_role_arn` output.
+The account-specific values are kept out of the code. In the repository, open **Settings > Secrets and variables > Actions > Variables** and create two repository variables:
+
+| Variable | Value |
+|---|---|
+| `AWS_ROLE_ARN` | The `github_actions_role_arn` output |
+| `TF_STATE_BUCKET` | The `terraform_state_bucket` output |
+
+For local runs of `environments/dev`, copy `backend.hcl.example` to `backend.hcl`, set the bucket, and initialize with:
+
+```powershell
+terraform init -backend-config=backend.hcl
+```
 
 ### Step 3: Create the GitHub environment
 
@@ -317,7 +333,7 @@ Destroy in reverse order: the development environment first, then the bootstrap.
 ```powershell
 # 1. Development environment (uses the remote state)
 cd environments/dev
-terraform init
+terraform init -backend-config=backend.hcl
 terraform destroy
 
 # 2. Bootstrap (uses local state)
@@ -329,7 +345,6 @@ The state bucket is versioned and does not set `force_destroy`. If `terraform de
 
 ## 16. Known Limitations
 
-- **Account-specific values in code.** `backend.tf` and `terraform-cd.yml` contain the state bucket name and role ARN, which include the AWS account ID.
 - **Bootstrap uses local state.** Losing `bootstrap/terraform.tfstate` means the bootstrap resources must be imported or managed by hand.
 - **No plan on pull requests.** The role trusts only the `dev` environment, so CI cannot run `terraform plan` against AWS.
 - **Automatic apply.** CD applies the plan with `-auto-approve`. Approval depends on the `dev` environment's protection rules in GitHub.
@@ -339,12 +354,15 @@ The state bucket is versioned and does not set `force_destroy`. If `terraform de
 
 ## 17. Future Improvements
 
-- Store the role ARN and state bucket in GitHub variables and pass the bucket with `-backend-config`.
 - Add a read-only plan role trusted for pull requests, and post the plan as a pull request comment.
 - Restrict `s3:CreateBucket` to the development bucket ARN.
 - Remove `bootstrap/**` from the CD path filter, or add a separate bootstrap workflow.
 - Add security scanning (for example `checkov`) to CI.
 - Add `staging` and `prod` environments with separate state keys and roles.
+
+## 18. License
+
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
