@@ -250,6 +250,8 @@ The role has no IAM, EC2 or other service permissions.
 
 ## 10. Prerequisites
 
+> Commands are written for **Windows PowerShell**. Where Linux or macOS needs different syntax, a **Linux/macOS (Bash)** version follows directly below. All other commands work the same on every platform.
+
 | Requirement | Notes |
 |---|---|
 | AWS account | Permission to create S3 buckets, IAM roles, policies and OIDC providers (for bootstrap) |
@@ -264,7 +266,19 @@ The role has no IAM, EC2 or other service permissions.
 
 ```powershell
 cd bootstrap
-Copy-Item terraform.tfvars.example terraform.tfvars    # Linux/macOS: cp terraform.tfvars.example terraform.tfvars
+Copy-Item terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your values
+terraform init
+terraform plan -out=bootstrap.tfplan
+terraform apply bootstrap.tfplan
+terraform output
+```
+
+**Linux/macOS (Bash):**
+
+```bash
+cd bootstrap
+cp terraform.tfvars.example terraform.tfvars
 # Edit terraform.tfvars with your values
 terraform init
 terraform plan -out=bootstrap.tfplan
@@ -288,7 +302,7 @@ The account-specific values are kept out of the code. In the repository, open **
 | `AWS_ROLE_ARN` | The `github_actions_role_arn` output |
 | `TF_STATE_BUCKET` | The `terraform_state_bucket` output |
 
-For local runs of `environments/dev`, copy `backend.hcl.example` to `backend.hcl`, set the bucket, and initialize with:
+For local runs of `environments/dev`, copy `backend.hcl.example` to `backend.hcl` (`Copy-Item` on Windows, `cp` on Linux/macOS), set the bucket, and initialize with:
 
 ```powershell
 terraform init -backend-config=backend.hcl
